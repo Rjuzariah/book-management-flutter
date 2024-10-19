@@ -1,23 +1,12 @@
 import 'package:flutter/material.dart';
+import './screen/book_list.dart';
 
 void main() {
-  runApp(const MainApp());
-}
-
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Column(
-          children: [
-            Text('Hello World! qqq'), 
-            Text('Ria'), 
-            ],
-        ),
+  runApp(MaterialApp(
+    title: 'Book Management',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
       ),
-    );
-  }
+    home: BookListPage(),
+  ));
 }
