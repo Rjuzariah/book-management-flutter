@@ -68,10 +68,27 @@ class _BookListPageState extends State<BookListPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => BookDetailPage(book: book),
+                        builder: (context) => BookDetailPage(bookId: book.id),
                       ),
                     );
                   },
+                  trailing: IconButton(
+                    icon: Icon(Icons.delete),
+                    onPressed: () async {
+                      final success = await BookApi().deleteBook(book.id.toString());
+                      if (success) {
+                        // Show success message and refresh the list
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Book deleted successfully.')),
+                        );
+                        _fetchBooks();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Failed to delete book.')),
+                        );
+                      }
+                    },
+                  ),
                 );
               },
             );
