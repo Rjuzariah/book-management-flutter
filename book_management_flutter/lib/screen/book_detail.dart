@@ -1,7 +1,7 @@
-import 'package:book_management_flutter/models/book_create_model.dart';
+import 'package:book_management_flutter/models/book_create_edit_model.dart';
 import 'package:flutter/material.dart';
 import '../screen/book_edit.dart';
-import '../api/book_api.dart'; // Import your Book API for fetching data
+import '../api/book_api.dart';
 
 class BookDetailPage extends StatefulWidget {
   final int bookId; // Book ID for fetching details
@@ -13,7 +13,7 @@ class BookDetailPage extends StatefulWidget {
 }
 
 class _BookDetailPageState extends State<BookDetailPage> {
-  late Future<BookCreate> futureBook; // To store the future book data
+  late Future<BookCreateEdit> futureBook; // To store the future book data
 
   @override
   void initState() {
@@ -23,7 +23,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
 
   // Method to fetch book details
   void fetchBookDetails() {
-    futureBook = BookApi().getBook(widget.bookId); // Call your API to get book
+    futureBook = BookApi().getBook(widget.bookId);
     setState(() {}); // Notify the framework that the state has changed
   }
 
@@ -45,13 +45,18 @@ class _BookDetailPageState extends State<BookDetailPage> {
                 // Refresh the book details when returning from the edit page
                 if (value == true) {
                   fetchBookDetails();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Book updated successfully!'),
+                    ),
+                  );
                 }
               });
             },
           ),
         ],
       ),
-      body: FutureBuilder<BookCreate>(
+      body: FutureBuilder<BookCreateEdit>(
         future: futureBook,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {

@@ -1,4 +1,4 @@
-import 'package:book_management_flutter/models/book_create_model.dart';
+import 'package:book_management_flutter/models/book_create_edit_model.dart';
 import 'package:flutter/material.dart';
 import '../api/book_api.dart'; // Adjust the import as needed
 
@@ -31,7 +31,7 @@ class _BookEditPageState extends State<BookEditPage> {
 
   void _fetchBookData() async {
     // Fetch book data using the API
-    BookCreate book = await BookApi().getBook(widget.bookId);
+    BookCreateEdit book = await BookApi().getBook(widget.bookId);
     _titleController = TextEditingController(text: book.title);
     _authorController = TextEditingController(text: book.author ?? '');
     _publishedYearController = TextEditingController(text: book.publishedYear?.toString() ?? '');
@@ -41,7 +41,7 @@ class _BookEditPageState extends State<BookEditPage> {
   }
 
   Future<void> _updateBook() async {
-    final updatedBook = BookCreate(
+    final updatedBook = BookCreateEdit(
       title: _titleController.text,
       author: _authorController.text,
       publishedYear: int.tryParse(_publishedYearController.text),

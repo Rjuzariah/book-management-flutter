@@ -1,26 +1,31 @@
 import 'dart:convert';
-import 'package:book_management_flutter/models/book_create_model.dart';
+import 'package:book_management_flutter/models/book_create_edit_model.dart';
+import 'package:book_management_flutter/models/paginated_book_model.dart';
 import 'package:http/http.dart' as http;
-import '../models/book_model.dart';
 
 class BookApi {
   final String baseUrl = 'http://127.0.0.1:3000/api';
-  final Map<String, String> contentHeaders = {'Content-Type': 'application/json; charset=UTF-8'};
+  final Map<String, String> headers = {
+    'Authorization':'book-management-static-token', 
+    'Content-Type': 'application/json; charset=UTF-8'};
 
-  Future<List<Book>> fetchBooks() async {
-    final response = await http.get(Uri.parse('$baseUrl/books'));
+  Future<PaginatedBooks> fetchBooks(int page) async {
+    final response = await http.get(
+    Uri.parse('$baseUrl/books?page=$page&limit=10'), // Adjust limit as needed
+    headers: headers
+  );
     if (response.statusCode == 200) {
-      List jsonResponse = json.decode(response.body);
-      return jsonResponse.map((data) => Book.fromJson(data)).toList();
+      final jsonResponse = json.decode(response.body);
+      return PaginatedBooks.fromJson(jsonResponse);
     } else {
       throw Exception('Failed to load books');
     }
   }
 
-  Future<bool> createBook(BookCreate book) async {
+  Future<bool> createBook(BookCreateEdit book) async {
     final response = await http.post(
       Uri.parse('$baseUrl/books'),
-      headers: contentHeaders,
+      headers: headers,
       body: jsonEncode(<String, dynamic>{
           'title': book.title,
           'author': book.author,
@@ -32,20 +37,20 @@ class BookApi {
     if (response.statusCode == 201) {
       return true;
     } else {
-      throw Exception('Failed to create book');
+      return false;
     }
   }
 
-  Future<BookCreate> getBook(int id) async {
+  Future<BookCreateEdit> getBook(int id) async {
 
     final response = await http.get(
       Uri.parse('$baseUrl/books/$id'), 
-      headers: contentHeaders,
+      headers: headers,
     );
 
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
-      return BookCreate.fromJson(jsonResponse); // Assuming your BookCreate model has a fromJson constructor
+      return BookCreateEdit.fromJson(jsonResponse); // Assuming your BookCreateEdit model has a fromJson constructor
     } else {
       throw Exception('Failed to load book');
     } 
@@ -54,16 +59,16 @@ class BookApi {
   Future<bool> deleteBook(String id) async {
     final response = await http.delete(
       Uri.parse('$baseUrl/books/$id'), 
-      headers: contentHeaders,
+      headers: headers,
     );
 
     return response.statusCode == 204;
   }
 
-  Future<bool> updateBook(int id, BookCreate book) async {
+  Future<bool> updateBook(int id, BookCreateEdit book) async {
     final response = await http.put(
       Uri.parse('$baseUrl/books/${id}'),
-      headers: contentHeaders,
+      headers: headers,
       body: json.encode({
         'title': book.title,
         'author': book.author,
