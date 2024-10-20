@@ -11,30 +11,51 @@ class BookListPage extends StatefulWidget {
 }
 
 class _BookListPageState extends State<BookListPage> {
-  late Future<PaginatedBooks> futureBooks;
   int currentPage = 1;
+  bool isLoading = false;
+  bool hasMoreBooks = true;
+  List<Book> loadedBooks = []; 
 
   @override
   void initState() {
     super.initState();
-    futureBooks = _fetchBooks(); // Fetch the book list when the page initializes
+    _fetchBooks(); // Fetch the book list when the page initializes
   }
 
   // Method to fetch books
-  Future<PaginatedBooks> _fetchBooks() async {
+  Future<void> _fetchBooks() async {
+    if (isLoading || !hasMoreBooks) return; // Exit if loading or no more books
+
+    setState(() {
+      isLoading = true; // Set loading state to true
+    });
+
     try {
       PaginatedBooks paginatedBooks = await BookApi().fetchBooks(currentPage);
-      return paginatedBooks; // Return paginated books for FutureBuilder
+      loadedBooks.addAll(paginatedBooks.books); // Add new books to the list
+      currentPage++;
+      hasMoreBooks = paginatedBooks.currentPage < paginatedBooks.totalPages; // Check if more books are available
+      
+      setState(() {}); // Trigger a rebuild to update the UI
     } catch (error) {
       print("Error fetching books: $error");
-      rethrow; // rethrowing the error in case it's needed for further handling
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching books: $error')),
+      );
+    } finally {
+      setState(() {
+        isLoading = false; // Reset loading state
+      });
     }
   }
 
   void _refreshBooks() {
     setState(() {
-      futureBooks = _fetchBooks(); // Update the future for FutureBuilder
+      loadedBooks.clear(); // Clear the existing books
+      currentPage = 1; // Reset to first page
+      hasMoreBooks = true; // Reset the flag
     });
+    _fetchBooks(); // Fetch new books
   }
 
   @override
@@ -63,21 +84,13 @@ class _BookListPageState extends State<BookListPage> {
           ),
         ],
       ),
-      body: FutureBuilder<PaginatedBooks>(
-        future: futureBooks,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.books.isEmpty) {
-            return Center(child: Text('No books found.'));
-          } else {
-            final books = snapshot.data!.books; // Access the books list
-            return ListView.builder(
-              itemCount: books.length,
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: loadedBooks.length,
               itemBuilder: (context, index) {
-                final book = books[index];
+                final book = loadedBooks[index];
                 return ListTile(
                   title: Text(book.title),
                   onTap: () {
@@ -89,8 +102,7 @@ class _BookListPageState extends State<BookListPage> {
                       ),
                     ).then((value) {
                       _refreshBooks();
-  
-              });
+                    });
                   },
                   trailing: IconButton(
                     icon: Icon(Icons.delete),
@@ -102,7 +114,6 @@ class _BookListPageState extends State<BookListPage> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Book deleted successfully.')),
                         );
-                        
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Failed to delete book.')),
@@ -112,9 +123,20 @@ class _BookListPageState extends State<BookListPage> {
                   ),
                 );
               },
-            );
-          }
-        },
+            ),
+          ),
+          // Load More button
+          if (hasMoreBooks) // Check if there are more books to load
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(
+                onPressed: isLoading ? null : _fetchBooks, // Disable button while loading
+                child: isLoading
+                    ? CircularProgressIndicator() // Show loader while fetching
+                    : Text('Load More'),
+              ),
+            ),
+        ],
       ),
     );
   }
